@@ -11,8 +11,8 @@ from aiogram.types import (CallbackQuery, FSInputFile, InlineKeyboardButton,
                            InlineKeyboardMarkup, Message)
 from aiohttp import web
 
-TOKEN = os.environ["8815285092:AAGSF8SFvu-xyDfBcmXHuCJ9LQEL5Z7HT3s"]
-OWNER = int(os.environ["8869664157"])
+TOKEN = os.environ["BOT_TOKEN"]
+OWNER = int(os.environ["OWNER"])
 
 DIR = Path("workdir")
 DIR.mkdir(exist_ok=True)
