@@ -11,8 +11,7 @@ from aiogram.types import (CallbackQuery, FSInputFile, InlineKeyboardButton,
                            InlineKeyboardMarkup, Message)
 from aiohttp import web
 
-TOKEN = os.environ["BOT_TOKEN"]
-OWNER = int(os.environ["OWNER"])
+from config import BOT_TOKEN as TOKEN, OWNER_ID as OWNER
 
 DIR = Path("workdir")
 DIR.mkdir(exist_ok=True)
@@ -213,3 +212,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+  
