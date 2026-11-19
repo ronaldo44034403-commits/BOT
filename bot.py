@@ -12,19 +12,21 @@ import html
 import json
 import os
 import sys
+import threading
 import time
 import traceback
 import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 # ===================== НАСТРОЙКИ =====================
-TOKEN = os.environ.get("BOT_TOKEN", "9275826618:AAHXbIzxlq2uqs7mudGvOQvICYNTgC39ouk")
+TOKEN = os.environ.get("BOT_TOKEN", "ВСТАВЬТЕ_ТОКЕН")   # на Render задайте переменную BOT_TOKEN
 ADMIN = "8869664157"                      # ваш Telegram ID
 SUPPORT = "https://t.me/MR_XD_TON"        # ссылка на поддержку
 PHOTO = "img.png"                         # картинка во всех сообщениях ("" = выключить)
-DB_FILE = "база.xd"
+DB_FILE = os.environ.get("DB_FILE", "база.xd")   # на Render с диском: /data/база.xd
 
 MIN_TOPUP = 1000
 MAX_TOPUP = 1000000
@@ -796,11 +798,39 @@ def handle_update(upd):
             on_text(c, m["text"])
 
 
+# ===================== HTTP-СЕРВЕР ДЛЯ RENDER =====================
+class _Health(BaseHTTPRequestHandler):
+    def _ok(self, body=True):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.end_headers()
+        if body:
+            self.wfile.write(b"ok")
+
+    def do_GET(self):
+        self._ok()
+
+    def do_HEAD(self):          # UptimeRobot шлёт HEAD
+        self._ok(False)
+
+    def log_message(self, *a):  # не засорять логи
+        pass
+
+
+def start_health_server():
+    """Render (Web Service) требует открытый порт из переменной PORT."""
+    port = int(os.environ.get("PORT", "10000"))
+    srv = HTTPServer(("0.0.0.0", port), _Health)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    print("HTTP-сервер для Render слушает порт %d" % port)
+
+
 def main():
     global BOT_USERNAME
     if TOKEN.startswith("ВСТАВЬТЕ"):
         print("Впишите токен бота в TOKEN (или переменную BOT_TOKEN).")
         sys.exit(1)
+    start_health_server()
     load_db()
     me = api("getMe")
     if ok(me):
