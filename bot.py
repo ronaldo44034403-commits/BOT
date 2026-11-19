@@ -21,18 +21,51 @@ import urllib.request
 import uuid
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-# ===================== НАСТРОЙКИ =====================
-TOKEN = os.environ.get("BOT_TOKEN", "ВСТАВЬТЕ_ТОКЕН")   # на Render задайте переменную BOT_TOKEN
-ADMIN = "8869664157"                      # ваш Telegram ID
-SUPPORT = "https://t.me/MR_XD_TON"        # ссылка на поддержку
-PHOTO = "img.png"                         # картинка во всех сообщениях ("" = выключить)
-DB_FILE = os.environ.get("DB_FILE", "база.xd")   # на Render с диском: /data/база.xd
+# ===================== ЗАГРУЗКА .env =====================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-MIN_TOPUP = 1000
-MAX_TOPUP = 1000000
-BONUS_FROM = 200000     # бонус за пополнение от этой суммы (сум)
-BONUS_PERCENT = 3       # сколько % добавить бонусом (0 = выключить)
-REF_BONUS = 2000        # награда за приглашённого друга (после его первого пополнения)
+
+def load_env(path):
+    """Мини-загрузчик .env (без pip). Переменные самой системы/Render имеют приоритет."""
+    try:
+        with open(path, encoding="utf-8-sig") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, _, v = line.partition("=")
+                k, v = k.strip(), v.strip()
+                if len(v) >= 2 and v[0] == v[-1] and v[0] in "\"'":
+                    v = v[1:-1]
+                elif " #" in v:
+                    v = v.split(" #", 1)[0].strip()
+                os.environ.setdefault(k, v)
+    except FileNotFoundError:
+        pass
+
+
+load_env(os.path.join(BASE_DIR, ".env"))
+
+
+def env_int(name, default):
+    try:
+        return int(str(os.environ.get(name, default)).replace(" ", "").replace("_", ""))
+    except ValueError:
+        return default
+
+
+# ===================== НАСТРОЙКИ (берутся из .env) =====================
+TOKEN = os.environ.get("BOT_TOKEN", "ВСТАВЬТЕ_ТОКЕН")
+ADMIN = os.environ.get("ADMIN_ID", "8869664157")                 # ваш Telegram ID
+SUPPORT = os.environ.get("SUPPORT_URL", "https://t.me/MR_XD_TON")  # ссылка на поддержку
+PHOTO = os.path.join(BASE_DIR, os.environ.get("PHOTO", "img.png")) if os.environ.get("PHOTO", "img.png") else ""
+DB_FILE = os.path.join(BASE_DIR, os.environ.get("DB_FILE", "база.xd"))   # абсолютный путь (/data/база.xd) тоже работает
+
+MIN_TOPUP = env_int("MIN_TOPUP", 1000)
+MAX_TOPUP = env_int("MAX_TOPUP", 1000000)
+BONUS_FROM = env_int("BONUS_FROM", 200000)     # бонус за пополнение от этой суммы (сум)
+BONUS_PERCENT = env_int("BONUS_PERCENT", 3)    # сколько % добавить бонусом (0 = выключить)
+REF_BONUS = env_int("REF_BONUS", 2000)         # награда за приглашённого друга
 
 STARS = [(50, 12000), (75, 16000), (100, 22000), (150, 35000), (200, 46000)]
 PREMIUM = [(3, 160000), (6, 215000), (12, 400000)]
